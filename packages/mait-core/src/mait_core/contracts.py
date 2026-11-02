@@ -67,7 +67,7 @@ def recovery_action(tool: ToolDefinition, status: ToolInvocationStatus) -> Recov
     """What the broker may do with an invocation found in ``status`` after a crash.
 
     Implements the table in EXECUTION_MODEL.md §6. The rule that matters: an operation that
-    may have left Kiln is never blindly repeated.
+    may have left MAIT is never blindly repeated.
     """
     if status in (
         ToolInvocationStatus.CONFIRMED,

@@ -1,4 +1,4 @@
-# RFC 001 — Kiln Architecture
+# RFC 001 — MAIT Architecture
 
 | Field | Value |
 |---|---|
@@ -8,7 +8,7 @@
 | Amendments | [RFC-001-amendments.md](RFC-001-amendments.md) (A1–A13, decided 2026-11-02) |
 | Normative companions | [ARCHITECTURE](../ARCHITECTURE.md) · [EXECUTION_MODEL](../EXECUTION_MODEL.md) · [DATA_MODEL](../DATA_MODEL.md) · [SECURITY](../SECURITY.md) · [ROADMAP](../ROADMAP.md) · [ADR index](../adr/README.md) |
 
-> **Kiln — The Operating Infrastructure for Autonomous AI Systems**
+> **MAIT — The Operating Infrastructure for Autonomous AI Systems**
 >
 > Mission: build an open, extensible infrastructure platform that makes autonomous AI systems
 > **executable, manageable, observable, recoverable, governable and verifiable**.
@@ -24,7 +24,7 @@ documents incorporate the review amendments in [RFC-001-amendments.md](RFC-001-a
 
 ## 0. Executive decision
 
-**Thesis.** Kiln is an independent agent operations platform with its own execution engine,
+**Thesis.** MAIT is an independent agent operations platform with its own execution engine,
 agent integration layer, governance system and verification infrastructure.
 
 | Verb | Scope |
@@ -34,7 +34,7 @@ agent integration layer, governance system and verification infrastructure.
 | **Integrate** | Existing agent frameworks through adapters, without forcing developers to rewrite agents |
 | **Unify** | Every capability around a common agent identity, immutable version, execution record and behavioral contract |
 
-**Positioning.** Kiln is the infrastructure layer that turns independent AI agents into
+**Positioning.** MAIT is the infrastructure layer that turns independent AI agents into
 manageable, observable and controllable software systems.
 
 **Governing principle.** *We own the semantics. We don't reinvent every underlying mechanism.*
@@ -56,8 +56,8 @@ recovery semantics.
 **B. Distributed-systems infrastructure (reused):** scheduling at scale, worker coordination,
 durable timers, queue delivery, process recovery, replication, leader election, cluster management.
 
-Decision: **build Kiln Runtime, not a Kiln distributed database or container orchestrator.**
-PostgreSQL holds transactional state, Docker isolates processes. Backends sit behind Kiln
+Decision: **build MAIT Runtime, not a MAIT distributed database or container orchestrator.**
+PostgreSQL holds transactional state, Docker isolates processes. Backends sit behind MAIT
 interfaces so they can be replaced without changing the public SDK. (Temporal as a backend: see
 amendment A9.)
 
@@ -71,7 +71,7 @@ checkpoint/resume. Guarantees are therefore **per integration level**:
 | 0 — Observed | Track execution and metadata | None internal |
 | 1 — Controlled | Intercept tools, enforce policies | Only at exposed boundaries |
 | 2 — Checkpointed | Persist framework checkpoints | Resume from supported checkpoints |
-| 3 — Native | Kiln execution primitives | Full Kiln-managed lifecycle |
+| 3 — Native | MAIT execution primitives | Full MAIT-managed lifecycle |
 
 **We never claim an arbitrary agent can be safely resumed from any point.**
 
@@ -86,11 +86,11 @@ Four canonical objects; every module operates on them:
 
 ## 2. Product boundaries
 
-**Kiln is:** an agent execution infrastructure · lifecycle management platform · framework
+**MAIT is:** an agent execution infrastructure · lifecycle management platform · framework
 integration layer · controlled tool execution system · durable execution system · agent
 observability platform · evaluation and verification platform · optimization and deployment platform.
 
-**Kiln is not:** a model provider · a replacement for Claude/GPT/Gemini · a general cloud provider ·
+**MAIT is not:** a model provider · a replacement for Claude/GPT/Gemini · a general cloud provider ·
 a generic workflow builder · a no-code chatbot builder · a replacement for every framework · a
 proprietary programming language.
 
@@ -142,7 +142,7 @@ Modular control plane + separately scalable execution plane. Not 15 microservice
       +-------+--------+                  +----------------+
               |
       +-------v---------------------------------------+
-      |               KILN RUNTIME                    |
+      |               MAIT RUNTIME                    |
       | Run State Machine · Scheduler / Lease Manager |
       | Context & Checkpoint Manager · Budgets        |
       | Tool Broker · Policy Enforcement              |
@@ -201,7 +201,7 @@ Key rules:
 - **Agent versions are immutable** and reference immutable digests: agent source or image digest,
   SDK/runtime compatibility version, tool definition versions, policy version, model provider and
   requested model identifier, inference parameters, dependency lockfile or image digest. A provider
-  may change what sits behind a model alias; Kiln records the request and the provider-reported
+  may change what sits behind a model alias; MAIT records the request and the provider-reported
   model, and never promises alias stability.
 - **The execution row is a projection; the journal is the authoritative transition history.** The
   event append and the projection update happen in one transaction.
@@ -251,16 +251,16 @@ execute → reconcile → persist → emit. **Approval is not a permanent grant.
 
 Outcome states: `PENDING → SUBMITTED → CONFIRMED | REJECTED | UNKNOWN`. **`UNKNOWN` ≠ failure.**
 The broker persists intent before submission, uses a stable invocation ID as idempotency key,
-reconciles where possible, never blindly repeats, and escalates. Kiln guarantees **controlled
+reconciles where possible, never blindly repeats, and escalates. MAIT guarantees **controlled
 execution with duplicate prevention where supported**, not universal exactly-once external effects.
 
-**MCP is an adapter, not our domain model:** Agent → Kiln Tool Interface → Tool Broker → MCP Adapter
+**MCP is an adapter, not our domain model:** Agent → MAIT Tool Interface → Tool Broker → MCP Adapter
 → MCP Server. Implement against a pinned specification revision and the official SDK.
 
 ## 7. SDK and API (summary)
 
 Native Python SDK (`@tool`, `@Agent`, `ctx.model`, `ctx.step`), framework wrapping
-(`kiln.integrations.langgraph.wrap`), an `AgentAdapter` interface with a **capability manifest**
+(`mait.integrations.langgraph.wrap`), an `AgentAdapter` interface with a **capability manifest**
 (`streaming`, `checkpointing`, `resume`, `tool_interception`, `cancellation`,
 `deterministic_replay`). The runtime adapts its guarantees to the declared capabilities.
 
@@ -312,7 +312,7 @@ call stack. Crashes must be tested at **every** boundary.
 ## 11. Observability
 
 Built on the journal and OpenTelemetry, mapped to the **GenAI semantic conventions**. Those
-conventions are still in development, so instrumentation is versioned and Kiln's internal event
+conventions are still in development, so instrumentation is versioned and MAIT's internal event
 contract stays stable. Three levels:
 **infrastructure** (workers, queue latency, DB) · **execution** (lifecycle, model/tool calls, retries,
 checkpoints, approvals) · **behavioral** (goal completion, policy violations, quality, cost per
@@ -336,7 +336,7 @@ backpressure, per-tenant concurrency limits, fair scheduling and noisy-neighbor 
 
 ## 13. Acceptance criteria
 
-`kiln-chaos` reliability matrix, security matrix and state-machine properties: see
+`mait-chaos` reliability matrix, security matrix and state-machine properties: see
 [ROADMAP.md §3](../ROADMAP.md#3-acceptance-test-matrices).
 
 ## 14. Phases
@@ -366,7 +366,7 @@ See [adr/README.md](../adr/README.md).
 ## 17. Long-term: the intelligence loop
 
 Executions → evidence → failure and quality analysis → optimization proposals → evaluation and
-verification → controlled deployment → executions. With 500 agents under management, Kiln can detect
+verification → controlled deployment → executions. With 500 agents under management, MAIT can detect
 repeated failure classes, expensive patterns, unsafe permission configurations and pre-deployment
 regressions, and can compare providers. Promotion controls stay human-defined. This is where the
 evaluation research and the execution infrastructure meet, and it is the main long-term

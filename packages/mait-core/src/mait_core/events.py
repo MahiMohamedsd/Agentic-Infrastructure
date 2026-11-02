@@ -8,15 +8,15 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
-from kiln_core.ids import new_id
-from kiln_core.lifecycle import Writer, is_transition_event
+from mait_core.ids import new_id
+from mait_core.lifecycle import Writer, is_transition_event
 
 SCHEMA_VERSION = 1
 INLINE_PAYLOAD_LIMIT_BYTES = 16 * 1024
 
 
 def canonical_json(value: Any) -> bytes:
-    """Deterministic JSON encoding used for every digest in Kiln."""
+    """Deterministic JSON encoding used for every digest in MAIT."""
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
 
 

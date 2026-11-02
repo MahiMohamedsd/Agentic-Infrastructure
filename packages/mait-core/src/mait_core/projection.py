@@ -11,7 +11,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import dataclass, replace
 
-from kiln_core.errors import (
+from mait_core.errors import (
     IllegalTransition,
     LeaseNotHeld,
     SequenceConflict,
@@ -19,8 +19,8 @@ from kiln_core.errors import (
     TenantMismatch,
     WriterNotAllowed,
 )
-from kiln_core.events import Event
-from kiln_core.lifecycle import (
+from mait_core.events import Event
+from mait_core.lifecycle import (
     ANNOTATION_EVENT_TYPES,
     ExecutionStatus,
     Writer,

@@ -1,11 +1,11 @@
 # Architecture
 
-**Status:** Normative for Phases 0–2. Source: [RFC-001](rfcs/RFC-001-kiln-architecture.md) §0–3, §7,
+**Status:** Normative for Phases 0–2. Source: [RFC-001](rfcs/RFC-001-mait-architecture.md) §0–3, §7,
 §12, with amendments A9, A11 and A13.
 
 ## 1. Thesis
 
-Kiln is the infrastructure layer that turns independent AI agents into manageable, observable and
+MAIT is the infrastructure layer that turns independent AI agents into manageable, observable and
 controllable software systems. **We own the semantics; we reuse the mechanisms.**
 
 | Own | Reuse | Integrate |
@@ -22,7 +22,7 @@ holds it.
 ## 3. Processes (V0)
 
 ```
-             ┌────────────────────────── kiln server ───────────────────────────┐
+             ┌────────────────────────── mait server ───────────────────────────┐
  CLI / SDK ──► API (FastAPI) │ Execution Gateway │ Scheduler + Reaper │ SSE   │
              │  registry · policies · runs · approvals · evaluations           │
              └───────────────┬───────────────────────────────┬────────────────┘
@@ -34,17 +34,17 @@ holds it.
                        │ tasks      │                  │ checkpoints│
                        └─────▲──────┘                  └─────▲──────┘
                              │ claim / heartbeat / append    │
-             ┌───────────────┴──── kiln worker (N) ──────────┴────────────────┐
+             ┌───────────────┴──── mait worker (N) ──────────┴────────────────┐
              │ Runtime engine · ctx primitives · Tool Broker · Policy PEP      │
              │ Budget enforcement · Adapters (native, langgraph, openai, mcp)  │
              └─────────────────────────────────────────────────────────────────┘
 ```
 
-- **Two deployables** (A11): `kiln server` and `kiln worker`. The scheduler and the reaper run inside
+- **Two deployables** (A11): `mait server` and `mait worker`. The scheduler and the reaper run inside
   the server, singleton-elected through a PostgreSQL advisory lock.
 - **Workers** reach PostgreSQL only through the runtime's write path (fenced appends). They never
   touch registry tables directly.
-- **Splitting later:** each domain module exposes a Python interface (`kiln_core.contracts` and the
+- **Splitting later:** each domain module exposes a Python interface (`mait_core.contracts` and the
   repository interfaces). Turning one into a network service changes the transport, not the domain.
 
 ## 4. Repository layout
@@ -54,17 +54,17 @@ apps/
   server/            # FastAPI app: API + gateway + scheduler/reaper   (Phase 1)
   worker/            # worker process                                  (Phase 1)
   dashboard/         # Next.js                                         (Phase 5)
-  cli/               # `kiln` CLI                                      (Phase 1)
+  cli/               # `mait` CLI                                      (Phase 1)
 packages/
-  kiln-core/         # contracts, lifecycle, events, projection — pure, no I/O  ← exists
-  kiln-runtime/      # engine, ctx primitives, leases, recovery, budgets          (Phase 1)
-  kiln-storage/      # PostgreSQL repositories, object storage, migrations runner (Phase 1)
-  kiln-tools/        # broker, registry, effects, idempotency, reconciliation     (Phase 2)
-  kiln-policy/       # PolicyEvaluator interface, kiln-rules-v1, cedar backend    (Phase 3)
-  kiln-adapters/     # langgraph, openai-agents, mcp                              (Phase 2)
-  kiln-eval/         # scenarios, evaluators, Bradley–Terry, gates                (Phase 4)
-  kiln-observability/# OTel exporter fed from the journal                         (Phase 3)
-  kiln-sdk/          # public Python SDK (thin: registration, submit, stream)     (Phase 1)
+  mait-core/         # contracts, lifecycle, events, projection — pure, no I/O  ← exists
+  mait-runtime/      # engine, ctx primitives, leases, recovery, budgets          (Phase 1)
+  mait-storage/      # PostgreSQL repositories, object storage, migrations runner (Phase 1)
+  mait-tools/        # broker, registry, effects, idempotency, reconciliation     (Phase 2)
+  mait-policy/       # PolicyEvaluator interface, mait-rules-v1, cedar backend    (Phase 3)
+  mait-adapters/     # langgraph, openai-agents, mcp                              (Phase 2)
+  mait-eval/         # scenarios, evaluators, Bradley–Terry, gates                (Phase 4)
+  mait-observability/# OTel exporter fed from the journal                         (Phase 3)
+  mait-sdk/          # public Python SDK (thin: registration, submit, stream)     (Phase 1)
 infrastructure/
   migrations/        # explicit SQL; the ORM never defines the domain model
   docker/            # docker-compose for local dev
@@ -79,13 +79,13 @@ publish separately only after their interfaces stabilize.
 ### 4.1 Dependency rules (enforced in CI later with import-linter)
 
 ```
-kiln-core      ← everything (depends on nothing)
-kiln-storage   ← kiln-runtime, apps/server
-kiln-runtime   ← apps/worker, apps/server
-kiln-tools     ← kiln-runtime
-kiln-policy    ← kiln-tools
-kiln-adapters  ← kiln-runtime          (adapters never import storage)
-kiln-eval      ← apps/server           (eval reads evidence via storage interfaces, never runtime internals)
+mait-core      ← everything (depends on nothing)
+mait-storage   ← mait-runtime, apps/server
+mait-runtime   ← apps/worker, apps/server
+mait-tools     ← mait-runtime
+mait-policy    ← mait-tools
+mait-adapters  ← mait-runtime          (adapters never import storage)
+mait-eval      ← apps/server           (eval reads evidence via storage interfaces, never runtime internals)
 ```
 
 ## 5. Component ownership
@@ -95,7 +95,7 @@ kiln-eval      ← apps/server           (eval reads evidence via storage interf
 | API Gateway | AuthN, routing, quotas | Agent execution |
 | Agent Registry | Agent definitions and versions | Runtime state |
 | Execution Gateway | Run admission (quotas, version resolution, budget validation) | Business tool logic |
-| Runtime | Execution lifecycle and transitions (via `kiln_core.lifecycle`) | Frontend concerns |
+| Runtime | Execution lifecycle and transitions (via `mait_core.lifecycle`) | Frontend concerns |
 | Scheduler | Task claiming, leases, reaper, fairness | Agent reasoning |
 | State Manager | Checkpoints and snapshots | Evaluation results |
 | Tool Broker | Invocation protocol, effects, idempotency, reconciliation | Agent planning |
@@ -147,14 +147,14 @@ Resource-oriented, JSON, versioned by path. Its versioning is independent of the
 { "error": { "code": "execution.illegal_transition", "message": "…", "request_id": "req_…" } }
 ```
 
-`code` values are stable and defined by `kiln_core.errors`. Messages are not part of the contract.
+`code` values are stable and defined by `mait_core.errors`. Messages are not part of the contract.
 
 ## 7. SDK shape (Phase 1 target)
 
 ```python
-from kiln import Kiln, agent, tool
+from mait import MAIT, agent, tool
 
-kiln = Kiln(project="commerce")  # API key from env; never in code
+mait = MAIT(project="commerce")  # API key from env; never in code
 
 
 @tool(name="orders.lookup", effect="read")
@@ -172,7 +172,7 @@ async for event in run.events():
     ...
 ```
 
-Framework wrapping: `kiln.integrations.langgraph.wrap(graph, name=..., policy=...)`. The adapter's
+Framework wrapping: `mait.integrations.langgraph.wrap(graph, name=..., policy=...)`. The adapter's
 `AdapterCapabilities` decide the integration level, and the CLI prints the resulting guarantees.
 
 ## 8. Technology choices

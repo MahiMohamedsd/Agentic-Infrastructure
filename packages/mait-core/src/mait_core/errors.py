@@ -1,4 +1,4 @@
-"""Error taxonomy shared by every Kiln component.
+"""Error taxonomy shared by every MAIT component.
 
 Each error carries a stable ``code`` that the REST API exposes verbatim
 (ARCHITECTURE.md §6.2). Codes are part of the public contract; messages are not.
@@ -7,11 +7,11 @@ Each error carries a stable ``code`` that the REST API exposes verbatim
 from __future__ import annotations
 
 
-class KilnError(Exception):
-    code: str = "kiln.internal"
+class MaitError(Exception):
+    code: str = "mait.internal"
 
 
-class UnknownEventType(KilnError):
+class UnknownEventType(MaitError):
     code = "execution.unknown_event_type"
 
     def __init__(self, event_type: str) -> None:
@@ -19,7 +19,7 @@ class UnknownEventType(KilnError):
         self.event_type = event_type
 
 
-class IllegalTransition(KilnError):
+class IllegalTransition(MaitError):
     code = "execution.illegal_transition"
 
     def __init__(self, status: str, event_type: str, detail: str = "") -> None:
@@ -29,7 +29,7 @@ class IllegalTransition(KilnError):
         self.event_type = event_type
 
 
-class StaleLease(KilnError):
+class StaleLease(MaitError):
     """A writer presented a lease generation that is no longer current (fencing)."""
 
     code = "execution.stale_lease"
@@ -40,15 +40,15 @@ class StaleLease(KilnError):
         self.current = current
 
 
-class LeaseNotHeld(KilnError):
+class LeaseNotHeld(MaitError):
     code = "execution.lease_not_held"
 
 
-class WriterNotAllowed(KilnError):
+class WriterNotAllowed(MaitError):
     code = "execution.writer_not_allowed"
 
 
-class SequenceConflict(KilnError):
+class SequenceConflict(MaitError):
     """An event's sequence is not exactly current + 1."""
 
     code = "execution.sequence_conflict"
@@ -59,13 +59,13 @@ class SequenceConflict(KilnError):
         self.got = got
 
 
-class TenantMismatch(KilnError):
+class TenantMismatch(MaitError):
     code = "tenant.mismatch"
 
 
-class NonDeterminismError(KilnError):
+class NonDeterminismError(MaitError):
     code = "execution.nondeterminism"
 
 
-class BudgetExhausted(KilnError):
+class BudgetExhausted(MaitError):
     code = "execution.budget_exhausted"

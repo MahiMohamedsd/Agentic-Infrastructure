@@ -2,8 +2,8 @@
 
 **Status:** Normative for Phase 1. Implements RFC-001 §5 and §10 with amendments A1–A6 and A8.
 The reference implementation of the lifecycle and projection rules is
-[`kiln_core.lifecycle`](../packages/kiln-core/src/kiln_core/lifecycle.py) and
-[`kiln_core.projection`](../packages/kiln-core/src/kiln_core/projection.py). When this document and
+[`mait_core.lifecycle`](../packages/mait-core/src/mait_core/lifecycle.py) and
+[`mait_core.projection`](../packages/mait-core/src/mait_core/projection.py). When this document and
 that code disagree, the property tests decide which one is wrong.
 
 ---
@@ -155,7 +155,7 @@ reaper. It finds `leased` tasks whose `lease_expires_at < now()` and, for each o
 
 Worker A may *already have sent* an external request between steps 1 and 3. That is why tool
 invocations persist intent with a stable idempotency key **before** submission (§6). Fencing
-protects Kiln's state; idempotency keys protect the outside world.
+protects MAIT's state; idempotency keys protect the outside world.
 
 ### 4.5 Timers
 
@@ -202,7 +202,7 @@ irrelevant. For each call:
   reconciliation rules and are never blindly repeated.
 - No record for that ordinal → execute normally (live mode). This includes a gap left by a crash
   between allocation and the `step.started` append. Intent-before-submit guarantees an unrecorded
-  tool call never left Kiln.
+  tool call never left MAIT.
 
 Checkpoints are an optimization. With a checkpoint at sequence *s*, the runtime restores the
 checkpointed state and only replays primitives after *s*.
@@ -235,7 +235,7 @@ On recovery:
 
 | Found state | Action |
 |---|---|
-| PENDING | Safe to submit (nothing has left Kiln). |
+| PENDING | Safe to submit (nothing has left MAIT). |
 | SUBMITTED / UNKNOWN, tool supports reconciliation | Query the provider by idempotency key. |
 | SUBMITTED / UNKNOWN, `idempotent_write` or provider honors idempotency keys | Resubmit with the same key. |
 | SUBMITTED / UNKNOWN, otherwise | **Do not resubmit.** Mark UNKNOWN → `tool.unresolved` → SUSPENDED. |

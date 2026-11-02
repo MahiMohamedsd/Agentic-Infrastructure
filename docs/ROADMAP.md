@@ -10,7 +10,7 @@
 - [x] RFC-001 baseline with review amendments
 - [x] ARCHITECTURE, EXECUTION_MODEL, DATA_MODEL, SECURITY, ROADMAP, ADR index
 - [x] Canonical schema (`0001_init.sql`), verified on PostgreSQL 16
-- [x] `kiln-core`: lifecycle table, event envelope, fenced projection, tool/adapter contracts, step matching
+- [x] `mait-core`: lifecycle table, event envelope, fenced projection, tool/adapter contracts, step matching
 - [x] Property tests for state-machine invariants
 - [x] Docker Compose dev environment (PostgreSQL; MinIO optional)
 
@@ -19,12 +19,12 @@ Remaining owner decisions are listed in §4.
 
 ### Phase 1 — Runtime core (Milestone 1)
 
-- `kiln-storage`: migration runner, tenant-scoped repositories, the fenced append path (§3 of EXECUTION_MODEL)
+- `mait-storage`: migration runner, tenant-scoped repositories, the fenced append path (§3 of EXECUTION_MODEL)
 - Scheduler: claim (`SKIP LOCKED`), heartbeat, reaper with advisory lock, dead-lettering
-- `kiln-runtime`: worker loop, `ctx.step`, `ctx.model` (one provider), `ctx.tool` (in-process broker stub with effects + intent-before-submit), checkpoints, cancellation, suspension, budgets (reserve→settle)
+- `mait-runtime`: worker loop, `ctx.step`, `ctx.model` (one provider), `ctx.tool` (in-process broker stub with effects + intent-before-submit), checkpoints, cancellation, suspension, budgets (reserve→settle)
 - `apps/server` endpoints: agents, versions, runs, cancel/suspend/resume, events (JSON + SSE)
-- `kiln` CLI: `agent create`, `version create`, `run`, `runs show`, `runs events --follow`
-- `kiln-chaos` harness: kill/pause workers at every durable boundary
+- `mait` CLI: `agent create`, `version create`, `run`, `runs show`, `runs events --follow`
+- `mait-chaos` harness: kill/pause workers at every durable boundary
 
 **Exit: Milestone 1.** A developer registers an agent, executes it, inspects every operation,
 kills the worker mid-run, and the execution recovers without repeating any committed external
@@ -33,14 +33,14 @@ action. Tests `rel-01`…`rel-05`, `rel-08`, `rel-09` pass.
 ### Phase 2 — Integrations and tool infrastructure
 
 Tool registry API, full broker protocol, idempotency and reconciliation, `UNKNOWN` handling,
-adapter interface hardening, **LangGraph adapter (Level 2 via a Kiln-backed checkpointer)**,
+adapter interface hardening, **LangGraph adapter (Level 2 via a MAIT-backed checkpointer)**,
 OpenAI Agents SDK adapter (Level 1), MCP adapter on a pinned spec.
-**Exit:** an existing LangGraph agent runs inside the Kiln envelope with zero changes to its graph
+**Exit:** an existing LangGraph agent runs inside the MAIT envelope with zero changes to its graph
 code, and its guarantees are reported correctly. `rel-06`, `rel-07`, `rel-10` pass.
 
 ### Phase 3 — Governance and observability
 
-`PolicyEvaluator` + `kiln-rules-v1`, approvals (bound, expiring, re-authorized), per-tenant
+`PolicyEvaluator` + `mait-rules-v1`, approvals (bound, expiring, re-authorized), per-tenant
 concurrency and fair scheduling, OTel exporter (GenAI semconv mapping, versioned), cost tracking,
 journal partitioning, managed-mode Docker sandbox, gVisor/Firecracker spike.
 **Exit:** developers can operate and govern real executions. The `sec-*` matrix passes.
@@ -57,7 +57,7 @@ rankings reproduce within CI. A planted critical regression is blocked even when
 
 Next.js dashboard (execution detail page first), org management, deployments/canary, hosted control
 plane on AWS, billing, documentation, public release.
-**Exit:** an external developer adopts Kiln without our help.
+**Exit:** an external developer adopts MAIT without our help.
 
 | Phase | Primary metric |
 |---|---|
@@ -77,7 +77,7 @@ register agent → create version → submit execution → schedule worker → m
 
 ## 3. Acceptance test matrices
 
-### Reliability (`kiln-chaos`)
+### Reliability (`mait-chaos`)
 
 | ID | Test | Required behavior |
 |---|---|---|
@@ -96,7 +96,7 @@ register agent → create version → submit execution → schedule worker → m
 
 | ID | Test | Required behavior |
 |---|---|---|
-| sec-01 | Cross-tenant run access (API, repository, raw SQL as `kiln_app`) | Denied / not found |
+| sec-01 | Cross-tenant run access (API, repository, raw SQL as `mait_app`) | Denied / not found |
 | sec-02 | Unauthorized tool | Denied, `tool.invocation.denied` recorded |
 | sec-03 | Expired credential | Fails; no fallback credential |
 | sec-04 | Malicious tool output (injection, oversize, schema-violating) | Labeled untrusted; validated; size-capped |
@@ -106,7 +106,7 @@ register agent → create version → submit execution → schedule worker → m
 | sec-08 | Escape attempt from managed sandbox | Contained (documented boundary per mode) |
 | sec-09 | Approval reused for different arguments | Rejected (args digest mismatch) |
 
-### State-machine properties (implemented in `kiln-core`)
+### State-machine properties (implemented in `mait-core`)
 
 - A terminal execution never transitions. ✅
 - Every transition has a legal predecessor. ✅
@@ -120,8 +120,8 @@ register agent → create version → submit execution → schedule worker → m
 ## 4. Owner decisions needed
 
 1. ~~Accept or reject amendments A1–A13~~ **Decided 2026-11-02** — see [RFC-001-amendments.md](rfcs/RFC-001-amendments.md).
-2. **License** for the open-source core (Apache-2.0 is the usual choice for infrastructure because
-   of its patent grant; it hasn't been set).
+2. ~~License~~ **Decided 2026-11-02: Apache-2.0** (`LICENSE`, `NOTICE`).
 3. First model provider for `ctx.model` in Phase 1.
-4. Project name check ("Kiln" is a common word; check trademarks and PyPI/npm availability before
-   the public release).
+4. ~~Project name~~ **Decided 2026-11-02: MAIT.** `mait` and `mait-core` were free on PyPI and
+   `mait` on npm (2026-11-02). Reserve them before the public release. A trademark search is still
+   needed before commercial use.

@@ -18,7 +18,7 @@ challenged or prototyped.
 | ADR-010 | Cedar policy evaluation | Proposed | Behind `PolicyEvaluator` (A13); evaluate Python bindings |
 | ADR-011 | OpenTelemetry integration | Accepted | GenAI semconv mapping is versioned |
 | ADR-012 | Docker-based local deployment | Accepted | |
-| ADR-013 | Open-source core | Accepted | License pending |
+| ADR-013 | Open-source core | Accepted | Apache-2.0 |
 | ADR-014 | Managed cloud as commercial offering | Proposed | |
 | ADR-015 | Native execution with explicit durable steps | Accepted | Step key `name#occurrence`, matched by allocation ordinal (A5) |
 | ADR-016 | Lease held only in `RUNNING`; waits exit via `QUEUED` | Accepted | A1 |

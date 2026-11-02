@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any
 
-from kiln_core.errors import NonDeterminismError
+from mait_core.errors import NonDeterminismError
 
 
 class StepKind(StrEnum):
@@ -61,7 +61,7 @@ class StepCursor:
       and for tools the same argument digest); otherwise ``NonDeterminismError``.
     * Ordinals absent from history (beyond it, or a gap left by a crash between allocation and
       the ``step.started`` append) execute live. Intent-before-submit guarantees nothing left
-      Kiln for an unrecorded tool call.
+      MAIT for an unrecorded tool call.
     * ``assert_fully_consumed()`` at the end of a run detects a code path that skipped
       recorded steps.
     """

@@ -1,10 +1,10 @@
-"""kiln-core: canonical contracts shared by every Kiln component.
+"""mait-core: canonical contracts shared by every MAIT component.
 
 Contains no I/O. Everything here is pure and property-tested so the rest of the system can
-rely on it as the definition of Kiln's execution semantics.
+rely on it as the definition of MAIT's execution semantics.
 """
 
-from kiln_core.contracts import (
+from mait_core.contracts import (
     AdapterCapabilities,
     AgentAdapter,
     Effect,
@@ -12,9 +12,9 @@ from kiln_core.contracts import (
     ToolDefinition,
     ToolInvocationStatus,
 )
-from kiln_core.events import Event
-from kiln_core.lifecycle import ExecutionStatus, Writer
-from kiln_core.projection import ExecutionState, apply, fold
+from mait_core.events import Event
+from mait_core.lifecycle import ExecutionStatus, Writer
+from mait_core.projection import ExecutionState, apply, fold
 
 __all__ = [
     "AdapterCapabilities",

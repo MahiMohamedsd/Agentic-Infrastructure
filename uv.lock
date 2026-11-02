@@ -4,8 +4,8 @@ requires-python = ">=3.12"
 
 [manifest]
 members = [
-    "kiln-core",
-    "kiln-workspace",
+    "mait-core",
+    "mait-workspace",
 ]
 
 [[package]]
@@ -108,16 +108,16 @@ wheels = [
 ]
 
 [[package]]
-name = "kiln-core"
+name = "mait-core"
 version = "0.0.1"
-source = { editable = "packages/kiln-core" }
+source = { editable = "packages/mait-core" }
 
 [[package]]
-name = "kiln-workspace"
+name = "mait-workspace"
 version = "0.0.0"
 source = { virtual = "." }
 dependencies = [
-    { name = "kiln-core" },
+    { name = "mait-core" },
 ]
 
 [package.dev-dependencies]
@@ -128,7 +128,7 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "kiln-core", editable = "packages/kiln-core" }]
+requires-dist = [{ name = "mait-core", editable = "packages/mait-core" }]
 
 [package.metadata.requires-dev]
 dev = [

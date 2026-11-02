@@ -10,19 +10,19 @@ from __future__ import annotations
 import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
-from kiln_core.errors import KilnError, StaleLease
-from kiln_core.events import Event
-from kiln_core.lifecycle import (
+from mait_core.errors import MaitError, StaleLease
+from mait_core.events import Event
+from mait_core.lifecycle import (
     ANNOTATION_EVENT_TYPES,
     TERMINAL_STATES,
     TRANSITION_EVENT_TYPES,
     TRANSITIONS,
     Writer,
 )
-from kiln_core.lifecycle import (
+from mait_core.lifecycle import (
     ExecutionStatus as S,
 )
-from kiln_core.projection import ExecutionState, apply
+from mait_core.projection import ExecutionState, apply
 
 ORG, RUN = "org_test", "run_test"
 ALL_TYPES = sorted(TRANSITION_EVENT_TYPES | set(ANNOTATION_EVENT_TYPES))
@@ -54,7 +54,7 @@ def test_invariants_hold_under_arbitrary_event_streams(attempts):
         event = make_event(state, etype, writer, offset)
         try:
             state = apply(state, event)
-        except KilnError:
+        except MaitError:
             assert state == before  # rejected events never mutate (pure function)
             continue
 
@@ -85,7 +85,7 @@ def test_stale_worker_can_never_mutate_state(attempts, staleness):
     for etype, writer, offset in attempts:
         try:
             state = apply(state, make_event(state, etype, writer, offset))
-        except KilnError:
+        except MaitError:
             pass
     if state.lease_generation < staleness:
         return
@@ -93,7 +93,7 @@ def test_stale_worker_can_never_mutate_state(attempts, staleness):
         stale = Event(
             ORG, RUN, state.sequence + 1, etype, Writer.WORKER, state.lease_generation - staleness
         )
-        with pytest.raises(KilnError):
+        with pytest.raises(MaitError):
             apply(state, stale)
 
 
@@ -102,7 +102,7 @@ def test_every_terminal_state_rejects_every_transition():
         state = ExecutionState(ORG, RUN, status=terminal, sequence=5)
         for etype in TRANSITION_EVENT_TYPES:
             for writer in Writer:
-                with pytest.raises(KilnError):
+                with pytest.raises(MaitError):
                     apply(state, Event(ORG, RUN, 6, etype, writer, 0))
 
 
@@ -160,7 +160,7 @@ def test_cancel_fences_running_worker_but_late_outcomes_are_still_recorded():
     s = ExecutionState(ORG, RUN, status=S.RUNNING, sequence=3, lease_generation=1)
     s = apply(s, Event(ORG, RUN, 4, "run.cancelled", Writer.CONTROL, 0))
     assert s.status is S.CANCELLED and s.lease_generation == 2
-    with pytest.raises(KilnError):
+    with pytest.raises(MaitError):
         apply(s, Event(ORG, RUN, 5, "tool.invocation.completed", Writer.WORKER, 1))
     s = apply(s, Event(ORG, RUN, 5, "tool.invocation.late_outcome", Writer.CONTROL, 0))
     assert s.status is S.CANCELLED and s.sequence == 5
@@ -178,14 +178,14 @@ def test_retry_increments_attempt_but_recovery_does_not():
 
 def test_sequence_gaps_and_duplicates_are_rejected():
     s = ExecutionState(ORG, RUN)
-    with pytest.raises(KilnError):
+    with pytest.raises(MaitError):
         apply(s, Event(ORG, RUN, 2, "run.accepted", Writer.CONTROL, 0))
     s = apply(s, Event(ORG, RUN, 1, "run.accepted", Writer.CONTROL, 0))
-    with pytest.raises(KilnError):
+    with pytest.raises(MaitError):
         apply(s, Event(ORG, RUN, 1, "run.accepted", Writer.CONTROL, 0))
 
 
 def test_cross_tenant_event_rejected():
     s = ExecutionState(ORG, RUN)
-    with pytest.raises(KilnError):
+    with pytest.raises(MaitError):
         apply(s, Event("org_other", RUN, 1, "run.accepted", Writer.CONTROL, 0))

@@ -46,19 +46,19 @@ SELECT pg_temp.expect_failure(
   'raw credentials rejected');
 
 -- RLS: tenant B sees nothing of tenant A; missing tenant setting sees nothing.
-SET LOCAL ROLE kiln_app;
-SET LOCAL kiln.organization_id = 'org_b';
+SET LOCAL ROLE mait_app;
+SET LOCAL mait.organization_id = 'org_b';
 DO $$ BEGIN
   IF (SELECT count(*) FROM executions) <> 0 THEN RAISE EXCEPTION 'INVARIANT VIOLATED: RLS leak'; END IF;
 END $$;
 SELECT pg_temp.expect_failure(
   $q$INSERT INTO agents (id, organization_id, project_id, name) VALUES ('agt_y', 'org_a', 'prj_a', 'y')$q$,
   'RLS blocks writes into another tenant');
-SET LOCAL kiln.organization_id = '';
+SET LOCAL mait.organization_id = '';
 DO $$ BEGIN
   IF (SELECT count(*) FROM agents) <> 0 THEN RAISE EXCEPTION 'INVARIANT VIOLATED: RLS without tenant'; END IF;
 END $$;
-SET LOCAL kiln.organization_id = 'org_a';
+SET LOCAL mait.organization_id = 'org_a';
 DO $$ BEGIN
   IF (SELECT count(*) FROM executions) <> 1 THEN RAISE EXCEPTION 'INVARIANT VIOLATED: owner cannot see own rows'; END IF;
 END $$;

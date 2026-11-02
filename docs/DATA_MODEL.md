@@ -17,7 +17,7 @@ index, the terminal/`finished_at` check, and RLS isolation all behave as describ
    `execution_events`.
 5. **Large or sensitive payloads go to object storage** (`*_ref` + `sha256:` digest). Inline payloads
    are limited to 16 KiB and stored redacted.
-6. **IDs are prefixed and time-sortable** (`run_01J…`, see `kiln_core.ids`). They're readable in
+6. **IDs are prefixed and time-sortable** (`run_01J…`, see `mait_core.ids`). They're readable in
    logs and append-friendly for B-trees.
 
 ## 2. Entity map
@@ -48,7 +48,7 @@ workers (global, not tenant-owned)
 | `agent_versions` | Immutable definition: `spec`, `spec_digest`, `artifact_digest`, `runtime_compat`, `integration_level`, `adapter`, `adapter_capabilities`, `policy_id` | immutable; `UNIQUE(agent, version)` |
 | `agent_version_tools` | Pins exact tool contract versions | PK `(agent_version, tool_definition)` |
 | `tool_definitions` | Tool contract: effect, schemas, idempotency/reconciliation support, approval, timeout, transport, `credentials_ref` | immutable; `credentials_ref LIKE 'secret://%'` |
-| `policies` | Versioned policy documents (`kiln-rules-v1` or `cedar`) | immutable; `UNIQUE(project, name, version)` |
+| `policies` | Versioned policy documents (`mait-rules-v1` or `cedar`) | immutable; `UNIQUE(project, name, version)` |
 | `deployments` | Version → environment, canary %, promotion evidence | one `active` per agent+env |
 | `executions` | Projection: status, `sequence`, `lease_generation`, `attempt`, `recoveries`, `rerun_of`, budget, usage | status CHECK; terminal ⇔ `finished_at` set; `UNIQUE(org, idempotency_key)` |
 | `execution_events` | Journal | PK `(execution_id, sequence)`; `event_id` UNIQUE; append-only |
@@ -68,7 +68,7 @@ creation time, and `spec_digest = sha256(canonical_json(spec))`.
 
 ```json
 {
-  "kiln_spec": 1,
+  "mait_spec": 1,
   "runtime": { "type": "python", "entrypoint": "agents.support:run", "compat": ">=0.1,<0.2" },
   "artifact": { "kind": "oci", "digest": "sha256:…" },
   "model": {

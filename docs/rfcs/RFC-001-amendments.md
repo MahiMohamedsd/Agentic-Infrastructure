@@ -2,10 +2,10 @@
 
 | Field | Value |
 |---|---|
-| Amends | [RFC-001 — Kiln Architecture](RFC-001-kiln-architecture.md) |
+| Amends | [RFC-001 — MAIT Architecture](RFC-001-mait-architecture.md) |
 | Status | **Decided 2026-11-02**: 10 accepted, 3 accepted with changes (A5, A6, A12), 0 rejected |
 | Decided by | Review by Claude, delegated by the owner ("you judge what's best and decide"). The owner can reopen any item. |
-| Already reflected in | [EXECUTION_MODEL](../EXECUTION_MODEL.md) · [DATA_MODEL](../DATA_MODEL.md) · [SECURITY](../SECURITY.md) · [ADR index](../adr/README.md) · `kiln-core` · `0001_init.sql` |
+| Already reflected in | [EXECUTION_MODEL](../EXECUTION_MODEL.md) · [DATA_MODEL](../DATA_MODEL.md) · [SECURITY](../SECURITY.md) · [ADR index](../adr/README.md) · `mait-core` · `0001_init.sql` |
 
 These came out of reviewing RFC-001 v0.1. Each one removes an internal contradiction or names a
 semantic the RFC left implicit.
@@ -50,7 +50,7 @@ so there's nothing to fence.
 - Short tool calls run **inside** the lease as annotation events with no status change.
   `WAITING_FOR_TOOL` is only for deferred/async tools.
 
-**Applied in.** EXECUTION_MODEL §2; `kiln_core.lifecycle`; test
+**Applied in.** EXECUTION_MODEL §2; `mait_core.lifecycle`; test
 `test_only_running_holds_lease_and_waiting_states_exit_via_queued`; ADR-016.
 
 **Decision.** **Accepted** — Re-claiming after every wait adds one claim round-trip (milliseconds) and buys a single fencing rule. Worth it.
@@ -72,7 +72,7 @@ approval rejection or expiry, or a worker disappearing. The runtime would have t
 | RUNNING | `lease.expired` | QUEUED (recovery, emitted by the reaper) |
 | RUNNING | `nondeterminism.detected` | SUSPENDED (see A5) |
 
-**Applied in.** EXECUTION_MODEL §2.1; `kiln_core.lifecycle.TRANSITIONS`.
+**Applied in.** EXECUTION_MODEL §2.1; `mait_core.lifecycle.TRANSITIONS`.
 
 **Decision.** **Accepted** — Default for an expired approval is "deliver to the agent". A per-agent setting `on_approval_expired: fail` can be added later without a lifecycle change.
 
@@ -92,7 +92,7 @@ every claim; retry limits need one that changes only on retries.
 - **Re-execution is a new execution** with `rerun_of` pointing to the original.
 
 **Applied in.** EXECUTION_MODEL §1, §4.6; `executions` columns in `0001_init.sql`;
-`kiln_core.projection`; test `test_retry_increments_attempt_but_recovery_does_not`.
+`mait_core.projection`; test `test_retry_increments_attempt_but_recovery_does_not`.
 
 **Decision.** **Accepted**
 
@@ -111,7 +111,7 @@ outcome goes.
   `evaluation.recorded`) but never transition events. The refund is recorded, and the run stays
   `CANCELLED`.
 
-**Applied in.** EXECUTION_MODEL §8; `kiln_core.lifecycle.ANNOTATION_EVENT_TYPES`; test
+**Applied in.** EXECUTION_MODEL §8; `mait_core.lifecycle.ANNOTATION_EVENT_TYPES`; test
 `test_cancel_fences_running_worker_but_late_outcomes_are_still_recorded`.
 
 **Decision.** **Accepted**
@@ -132,9 +132,9 @@ nothing notices.
 - Recovery always uses the execution's pinned `agent_version_id`. A deploy never changes in-flight
   code.
 
-**Applied in.** EXECUTION_MODEL §5.2–5.3; `kiln_core.steps`; `tool_invocations.step_key`; ADR-015.
+**Applied in.** EXECUTION_MODEL §5.2–5.3; `mait_core.steps`; `tool_invocations.step_key`; ADR-015.
 
-**Decision.** **Accepted with changes** — The original rule matched calls by journal position, which breaks under concurrency: with `asyncio.gather(ctx.step("a"), ctx.step("b"))`, steps complete (and are journaled) in a nondeterministic order, so a correct replay would be flagged as non-determinism or results would be swapped. **Change:** every durable call gets an **allocation ordinal** synchronously at call time (program order, stable under `gather`), recorded in `step.started`. Matching is by ordinal, not by journal position. Two further rules: an ordinal missing from history (a crash between allocation and append) executes live, and recorded steps never reached by the end of the run are non-determinism. Implemented in `kiln_core.steps` with three new tests (concurrent completion order, crash gap, skipped steps).
+**Decision.** **Accepted with changes** — The original rule matched calls by journal position, which breaks under concurrency: with `asyncio.gather(ctx.step("a"), ctx.step("b"))`, steps complete (and are journaled) in a nondeterministic order, so a correct replay would be flagged as non-determinism or results would be swapped. **Change:** every durable call gets an **allocation ordinal** synchronously at call time (program order, stable under `gather`), recorded in `step.started`. Matching is by ordinal, not by journal position. Two further rules: an ordinal missing from history (a crash between allocation and append) executes live, and recorded steps never reached by the end of the run are non-determinism. Implemented in `mait_core.steps` with three new tests (concurrent completion order, crash gap, skipped steps).
 
 ---
 
@@ -165,7 +165,7 @@ that efficiently, and a bug could link a child row to another tenant's parent.
 - `organization_id` goes on **every** tenant-owned table.
 - Each parent exposes `UNIQUE (organization_id, id)`, and children reference it with composite FKs.
   A cross-tenant reference becomes a constraint violation.
-- RLS policy: `organization_id = current_setting('kiln.organization_id')`. A missing setting shows
+- RLS policy: `organization_id = current_setting('mait.organization_id')`. A missing setting shows
   no rows.
 
 **Applied in.** DATA_MODEL §1; `0001_init.sql`; SQL invariants (cross-tenant FK, RLS read/write);
@@ -194,7 +194,7 @@ durable timers (retry backoff, approval timeouts).
 
 ## A9 — Temporal is a reference, not a backend
 
-**Problem.** v0.1 suggests Temporal as a possible future durability backend, but Kiln owns its own
+**Problem.** v0.1 suggests Temporal as a possible future durability backend, but MAIT owns its own
 leases, fencing and journal. Temporal's workflow-history model doesn't compose with that. Keeping
 the option open would leak into every interface.
 
@@ -231,9 +231,9 @@ Redis in Compose, is more surface than V0 needs. It brings deployment and debugg
 there are any users.
 
 **Amendment.**
-- V0 ships **two processes**: `kiln server` (API + gateway + scheduler/reaper, singleton through a
-  PostgreSQL advisory lock) and `kiln worker`.
-- A package gets its own directory only when work on it starts. `kiln-core` is first.
+- V0 ships **two processes**: `mait server` (API + gateway + scheduler/reaper, singleton through a
+  PostgreSQL advisory lock) and `mait worker`.
+- A package gets its own directory only when work on it starts. `mait-core` is first.
 - Redis is removed. MinIO sits behind an optional Compose profile.
 
 **Applied in.** ARCHITECTURE §3–4; `infrastructure/docker/docker-compose.yml`; ADR-001.
@@ -268,7 +268,7 @@ maintenance risk if the policy engine depends on them directly from day one.
 
 **Amendment.**
 - `PolicyEvaluator.evaluate(request) -> Decision{allow | deny | require_approval, reasons, policy_digest}`.
-- V1 ships a small built-in evaluator (`kiln-rules-v1`) for effect/tool/argument rules.
+- V1 ships a small built-in evaluator (`mait-rules-v1`) for effect/tool/argument rules.
 - Cedar plugs in behind the same interface after a prototype. ADR-010 stays Proposed.
 
 **Applied in.** SECURITY §5; `policies.language` in `0001_init.sql`; ADR-010.

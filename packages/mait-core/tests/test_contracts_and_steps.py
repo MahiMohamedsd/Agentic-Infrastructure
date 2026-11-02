@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import pytest
-from kiln_core.contracts import (
+from mait_core.contracts import (
     GUARANTEES,
     AdapterCapabilities,
     Effect,
@@ -10,14 +10,14 @@ from kiln_core.contracts import (
     ToolDefinition,
     recovery_action,
 )
-from kiln_core.contracts import (
+from mait_core.contracts import (
     ToolInvocationStatus as T,
 )
-from kiln_core.errors import NonDeterminismError, UnknownEventType
-from kiln_core.events import Event, digest
-from kiln_core.ids import kind_of, new_id
-from kiln_core.lifecycle import Writer
-from kiln_core.steps import Decision, RecordedStep, StepCursor, StepKind
+from mait_core.errors import NonDeterminismError, UnknownEventType
+from mait_core.events import Event, digest
+from mait_core.ids import kind_of, new_id
+from mait_core.lifecycle import Writer
+from mait_core.steps import Decision, RecordedStep, StepCursor, StepKind
 
 
 def tool(effect: Effect, **kw) -> ToolDefinition:

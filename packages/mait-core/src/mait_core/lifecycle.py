@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 
-from kiln_core.errors import IllegalTransition, UnknownEventType
+from mait_core.errors import IllegalTransition, UnknownEventType
 
 
 class ExecutionStatus(StrEnum):

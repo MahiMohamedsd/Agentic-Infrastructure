@@ -1,7 +1,7 @@
 # Security
 
 **Status:** Normative. Source: RFC-001 §9, amendments A7, A10 and A13.
-Kiln executes code, holds credentials and can trigger financial and destructive operations. It is
+MAIT executes code, holds credentials and can trigger financial and destructive operations. It is
 a security-sensitive platform from day one.
 
 ## 1. Threat model
@@ -30,7 +30,7 @@ Defense in depth:
 1. **Application repositories** take `organization_id` as a required argument and include it in
    every query.
 2. **Composite foreign keys** `(organization_id, id)` make cross-tenant references unrepresentable.
-3. **PostgreSQL RLS**: the app connects as `kiln_app` and runs `SET LOCAL kiln.organization_id` per
+3. **PostgreSQL RLS**: the app connects as `mait_app` and runs `SET LOCAL mait.organization_id` per
    transaction. If that setting is missing, no rows are visible (fails closed).
 4. **Object storage paths** are tenant-prefixed (`s3://bucket/{org}/{project}/…`). Phase 5 adds
    per-tenant KMS data keys.
@@ -40,10 +40,10 @@ RLS never replaces application authorization.
 
 ## 3. Execution modes and their honest guarantees
 
-| Mode | Where agent code runs | What Kiln can enforce |
+| Mode | Where agent code runs | What MAIT can enforce |
 |---|---|---|
-| **Trusted integration** | Inside the customer's process (SDK) | Journal, budgets, and policy **for calls that go through Kiln**. The agent *can* bypass the broker. Kiln is an operations layer here, not a security boundary. |
-| **Managed execution** | Kiln worker sandbox | Filesystem, egress allow-list, CPU/memory, duration, process privileges, mounted credentials, broker-only tool access |
+| **Trusted integration** | Inside the customer's process (SDK) | Journal, budgets, and policy **for calls that go through MAIT**. The agent *can* bypass the broker. MAIT is an operations layer here, not a security boundary. |
+| **Managed execution** | MAIT worker sandbox | Filesystem, egress allow-list, CPU/memory, duration, process privileges, mounted credentials, broker-only tool access |
 
 Docker with dropped capabilities, read-only root, a non-root user, a seccomp profile and no host
 network is acceptable for **trusted** customer workloads. **We do not claim Docker is a boundary
@@ -63,7 +63,7 @@ against hostile code.** Untrusted code requires gVisor or Firecracker (Phase 3+ 
 - **Model:** principal (agent version / execution / human), action (`tool:<name>`,
   `run:cancel`, …), resource, context (amount, environment, attempt, approval state).
 - **Interface:** `PolicyEvaluator.evaluate(request) -> Decision{allow|deny|require_approval, reasons, policy_digest}`.
-- **Backends:** `kiln-rules-v1` (built-in, small: effect/tool/argument predicates) first, and Cedar
+- **Backends:** `mait-rules-v1` (built-in, small: effect/tool/argument predicates) first, and Cedar
   behind the same interface after a prototype (A13).
 - **Defaults:** `destructive` tools require approval unless a policy explicitly waives it. Any
   evaluation error is a **deny** for `side_effect`/`destructive` actions.

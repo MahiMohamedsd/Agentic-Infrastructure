@@ -1,8 +1,8 @@
 [project]
-name = "kiln-workspace"
+name = "mait-workspace"
 version = "0.0.0"
 requires-python = ">=3.12"
-dependencies = ["kiln-core"]
+dependencies = ["mait-core"]
 
 [dependency-groups]
 dev = ["pytest>=8", "hypothesis>=6.100", "ruff>=0.6"]
@@ -14,7 +14,7 @@ package = false
 members = ["packages/*"]
 
 [tool.uv.sources]
-kiln-core = { workspace = true }
+mait-core = { workspace = true }
 
 [tool.pytest.ini_options]
 testpaths = ["packages"]
