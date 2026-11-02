@@ -1,0 +1,40 @@
+# Local development stack. PostgreSQL is the only required service (RFC-001 §12.2, A11).
+#   docker compose -f infrastructure/docker/docker-compose.yml up -d
+#   docker compose -f infrastructure/docker/docker-compose.yml --profile storage up -d   # + MinIO
+# The server and worker services are added in Phase 1.
+name: kiln
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: kiln
+      POSTGRES_PASSWORD: kiln-dev-only
+      POSTGRES_DB: kiln
+    ports:
+      - "5432:5432"
+    volumes:
+      - ../migrations:/docker-entrypoint-initdb.d:ro
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kiln -d kiln"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  minio:
+    profiles: ["storage"]
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: kiln
+      MINIO_ROOT_PASSWORD: kiln-dev-only
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+
+volumes:
+  pgdata:
+  miniodata:
