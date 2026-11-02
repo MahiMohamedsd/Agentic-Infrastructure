@@ -1,0 +1,18 @@
+[project]
+name = "mait-models"
+version = "0.0.1"
+description = "MAIT model providers: OpenAI-compatible adapter for open-weight inference servers (Ollama, llama.cpp, vLLM) and a scripted provider for tests."
+requires-python = ">=3.12"
+license = "Apache-2.0"
+authors = [{ name = "Mohamed Seddik Mahi" }]
+dependencies = ["mait-core", "httpx>=0.27"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mait_models"]
+
+[tool.uv.sources]
+mait-core = { workspace = true }

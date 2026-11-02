@@ -72,20 +72,25 @@ creation time, and `spec_digest = sha256(canonical_json(spec))`.
   "runtime": { "type": "python", "entrypoint": "agents.support:run", "compat": ">=0.1,<0.2" },
   "artifact": { "kind": "oci", "digest": "sha256:…" },
   "model": {
-    "provider": "anthropic",
-    "requested_model": "<model id as configured>",
-    "params": { "temperature": 0.2, "max_output_tokens": 1024 },
-    "price_table": "prices/2026-11-01"
+    "provider": "openai_compatible",
+    "server": "ollama",
+    "base_url_ref": "config://models/local",
+    "requested_model": "qwen3:4b",
+    "weights_digest": "ollama:<digest from /api/tags>",
+    "params": { "temperature": 0, "seed": 7, "max_output_tokens": 1024 },
+    "price_table": "prices/local-zero"
   },
   "tools": [{ "name": "orders.read", "version": "1.0.0", "digest": "sha256:…" }],
   "policy": { "id": "pol_…", "digest": "sha256:…" },
-  "limits": { "max_steps": 20, "max_duration_seconds": 300, "max_cost_usd": 0.10, "max_tool_calls": 10 },
+  "limits": { "max_steps": 20, "max_duration_seconds": 300, "max_cost_usd": 0.10, "max_tool_calls": 10, "max_model_tokens": 50000 },
   "adapter": { "name": "native", "capabilities": { "checkpointing": true, "resume": true, "tool_interception": true, "deterministic_replay": true } }
 }
 ```
 
-The provider's *served* model identifier is recorded per call in `model.completed` events, because
-an alias can change behind the same requested name.
+The provider's *served* model and, for open weights, the **weights digest** are recorded per call
+in `model.completed`. A name like `qwen3:4b` can be re-pulled with different weights. If the
+served digest differs from the version's pinned `weights_digest`, the call is recorded as drift,
+and evaluation treats it as a different model.
 
 ## 5. Write paths
 

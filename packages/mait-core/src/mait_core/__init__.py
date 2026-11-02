@@ -14,6 +14,7 @@ from mait_core.contracts import (
 )
 from mait_core.events import Event
 from mait_core.lifecycle import ExecutionStatus, Writer
+from mait_core.models import ModelProvider, ModelRequest, ModelResponse
 from mait_core.projection import ExecutionState, apply, fold
 
 __all__ = [
@@ -24,6 +25,9 @@ __all__ = [
     "ExecutionState",
     "ExecutionStatus",
     "IntegrationLevel",
+    "ModelProvider",
+    "ModelRequest",
+    "ModelResponse",
     "ToolDefinition",
     "ToolInvocationStatus",
     "Writer",

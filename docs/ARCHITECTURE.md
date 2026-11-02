@@ -56,7 +56,8 @@ apps/
   dashboard/         # Next.js                                         (Phase 5)
   cli/               # `mait` CLI                                      (Phase 1)
 packages/
-  mait-core/         # contracts, lifecycle, events, projection — pure, no I/O  ← exists
+  mait-core/         # contracts, lifecycle, events, projection, model contracts — pure, no I/O  ← exists
+  mait-models/       # OpenAI-compatible provider (Ollama, llama.cpp, vLLM…) + scripted provider ← exists
   mait-runtime/      # engine, ctx primitives, leases, recovery, budgets          (Phase 1)
   mait-storage/      # PostgreSQL repositories, object storage, migrations runner (Phase 1)
   mait-tools/        # broker, registry, effects, idempotency, reconciliation     (Phase 2)
@@ -185,6 +186,7 @@ Framework wrapping: `mait.integrations.langgraph.wrap(graph, name=..., policy=..
 | Queue | PostgreSQL `SKIP LOCKED` (V1); SQS/NATS later as transport only | ADR-005, A9 |
 | Persistence layer | SQLAlchemy Core or psycopg 3 with explicit SQL; migrations are raw SQL | — |
 | Object storage | S3 API (MinIO locally, optional) | — |
+| Models | `ModelProvider` interface; OpenAI-compatible adapter; default Qwen3 on Ollama (local, Apache-2.0) | ADR-019 |
 | Policy | `PolicyEvaluator` interface; built-in rules first, Cedar after a prototype | ADR-010, A13 |
 | Telemetry | OpenTelemetry, GenAI semconv mapping versioned | ADR-011 |
 | Dashboard | Next.js + TypeScript + Tailwind | Phase 5 |

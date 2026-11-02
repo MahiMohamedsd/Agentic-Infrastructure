@@ -21,6 +21,7 @@ Remaining owner decisions are listed in §4.
 
 - `mait-storage`: migration runner, tenant-scoped repositories, the fenced append path (§3 of EXECUTION_MODEL)
 - Scheduler: claim (`SKIP LOCKED`), heartbeat, reaper with advisory lock, dead-lettering
+- `mait-models` ✅ (done early): `ModelProvider` contract, OpenAI-compatible adapter, scripted provider
 - `mait-runtime`: worker loop, `ctx.step`, `ctx.model` (one provider), `ctx.tool` (in-process broker stub with effects + intent-before-submit), checkpoints, cancellation, suspension, budgets (reserve→settle)
 - `apps/server` endpoints: agents, versions, runs, cancel/suspend/resume, events (JSON + SSE)
 - `mait` CLI: `agent create`, `version create`, `run`, `runs show`, `runs events --follow`
@@ -121,7 +122,7 @@ register agent → create version → submit execution → schedule worker → m
 
 1. ~~Accept or reject amendments A1–A13~~ **Decided 2026-11-02** — see [RFC-001-amendments.md](rfcs/RFC-001-amendments.md).
 2. ~~License~~ **Decided 2026-11-02: Apache-2.0** (`LICENSE`, `NOTICE`).
-3. First model provider for `ctx.model` in Phase 1.
+3. ~~First model provider~~ **Decided 2026-11-02: open-weight models first** ([ADR-019](adr/ADR-019-open-weight-models.md)). OpenAI-compatible adapter, Qwen3 on Ollama by default, scripted provider for tests. Done in `mait-models`.
 4. ~~Project name~~ **Decided 2026-11-02: MAIT.** `mait` and `mait-core` were free on PyPI and
    `mait` on npm (2026-11-02). Reserve them before the public release. A trademark search is still
    needed before commercial use.

@@ -24,3 +24,4 @@ challenged or prototyped.
 | ADR-016 | Lease held only in `RUNNING`; waits exit via `QUEUED` | Accepted | A1 |
 | ADR-017 | Temporal is a reference, not a backend, through V2 | Accepted | A9 |
 | ADR-018 | Budget reserve → settle | Accepted | A6 (input tokens: provider count or byte-length upper bound) |
+| [ADR-019](ADR-019-open-weight-models.md) | Open-weight models first via one OpenAI-compatible adapter; default Qwen3 on Ollama | Accepted | `mait-models` |

@@ -69,3 +69,43 @@ class NonDeterminismError(MaitError):
 
 class BudgetExhausted(MaitError):
     code = "execution.budget_exhausted"
+
+
+class ModelProviderError(MaitError):
+    """Base for inference backend failures. ``retryable`` drives RETRY_WAIT vs run.failed."""
+
+    code = "model.provider_error"
+    retryable: bool = False
+
+
+class ProviderUnavailable(ModelProviderError):
+    """Connection refused/reset, DNS failure, or 5xx: the backend may come back."""
+
+    code = "model.unavailable"
+    retryable = True
+
+
+class ProviderTimeout(ModelProviderError):
+    code = "model.timeout"
+    retryable = True
+
+
+class ProviderRateLimited(ModelProviderError):
+    code = "model.rate_limited"
+    retryable = True
+
+    def __init__(self, message: str, retry_after_seconds: float | None = None) -> None:
+        super().__init__(message)
+        self.retry_after_seconds = retry_after_seconds
+
+
+class ProviderRequestRejected(ModelProviderError):
+    """4xx other than 429: the request itself is wrong. Retrying cannot help."""
+
+    code = "model.request_rejected"
+
+
+class ProviderProtocolError(ModelProviderError):
+    """The backend answered with something that is not a valid response."""
+
+    code = "model.protocol_error"

@@ -215,7 +215,24 @@ appends `nondeterminism.detected` and suspends. When the agent returns, any reco
 reached is also non-determinism (the code took a different path). Recovery **always** uses the execution's pinned
 `agent_version_id`. A deploy never changes the code of an in-flight execution.
 
-### 5.4 What we explicitly do not promise
+### 5.4 Model calls
+
+`ctx.model.generate` goes through a `ModelProvider` (ADR-019). Rules:
+
+- **Providers never retry internally.** A failed call raises a `ModelProviderError` with
+  `retryable` set. The runtime turns retryable errors into `step.failed.retryable → RETRY_WAIT`
+  (honoring `retry_after_seconds`) and the rest into `run.failed`. Every retry is journaled and
+  budgeted.
+- **`model.completed` stores the full provider response verbatim** (`ModelResponse.raw`, through
+  `payload_ref`), plus `ModelInfo`: provider, server, requested model, served model, and weights
+  digest. Text alone is not enough evidence, and some providers require earlier responses to be
+  sent back unchanged.
+- **Malformed tool arguments are data, not crashes.** `ToolCall.arguments is None` reaches the
+  broker, which records `tool.invocation.denied` with reason `invalid_arguments`. The agent
+  receives the error as the tool result.
+- `finish_reason = length` means truncated output. It's recorded, and the agent decides what to do.
+
+### 5.5 What we explicitly do not promise
 
 - Restoring an arbitrary Python call stack or local variables outside durable primitives.
 - Identical model output on re-execution.
@@ -244,7 +261,10 @@ On recovery:
 ## 7. Budgets (reserve → settle)
 
 Budget dimensions: `max_steps`, `max_duration_seconds` (wall clock from first claim, excluding
-waiting states), `max_cost_usd`, `max_tool_calls`.
+waiting states), `max_cost_usd`, `max_tool_calls`, `max_model_tokens` (input + output across all
+model calls). Local open-weight models cost ~$0 per token, so `max_model_tokens` and
+`max_duration_seconds` are the budgets that bind for them (ADR-019). Reservation and settlement
+work the same way in tokens as in dollars.
 
 1. Before a model call: `reservation = max_output_tokens × output_price + input_tokens × input_price`.
    `input_tokens` comes from the provider's token-counting endpoint when one is available. Otherwise

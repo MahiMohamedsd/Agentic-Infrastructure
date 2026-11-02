@@ -28,6 +28,10 @@ approvals, and evaluation-gated promotion.
 - `packages/mait-core`: the pure, property-tested definition of MAIT's execution semantics:
   the lifecycle transition table, the event envelope, the fenced projection, tool recovery rules,
   adapter capability → integration level, and durable step matching.
+- `packages/mait-models`: model providers. One adapter talks to any OpenAI-compatible server
+  (Ollama, llama.cpp, vLLM, LM Studio), so MAIT runs **local open-weight models with no API key**
+  (default: Qwen3, Apache-2.0). It also ships a scripted provider for deterministic tests and
+  failure injection. See [ADR-019](docs/adr/ADR-019-open-weight-models.md).
 - `infrastructure/migrations/0001_init.sql`: the canonical PostgreSQL schema with tenant-safe
   composite keys, immutability triggers and RLS, plus SQL invariant tests.
 
@@ -37,6 +41,14 @@ approvals, and evaluation-gated promotion.
 uv sync
 uv run pytest
 uv run ruff check .
+```
+
+Run a local open model (no API key needed):
+
+```bash
+docker compose -f infrastructure/docker/docker-compose.yml --profile models up -d
+docker compose -f infrastructure/docker/docker-compose.yml exec ollama ollama pull qwen3:4b
+uv run python examples/open_model_quickstart.py
 ```
 
 Database (optional for now):

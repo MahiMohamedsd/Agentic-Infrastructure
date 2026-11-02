@@ -1,6 +1,8 @@
 # Local development stack. PostgreSQL is the only required service (RFC-001 §12.2, A11).
 #   docker compose -f infrastructure/docker/docker-compose.yml up -d
 #   docker compose -f infrastructure/docker/docker-compose.yml --profile storage up -d   # + MinIO
+#   docker compose -f infrastructure/docker/docker-compose.yml --profile models up -d    # + Ollama
+#   docker compose -f infrastructure/docker/docker-compose.yml exec ollama ollama pull qwen3:4b
 # The server and worker services are added in Phase 1.
 name: mait
 
@@ -35,6 +37,17 @@ services:
     volumes:
       - miniodata:/data
 
+  # Local open-weight model server (ADR-019). Serves the OpenAI-compatible API at
+  # http://localhost:11434/v1. CPU works for small models; add a GPU reservation for speed.
+  ollama:
+    profiles: ["models"]
+    image: ollama/ollama:0.40.5
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollamadata:/root/.ollama
+
 volumes:
   pgdata:
   miniodata:
+  ollamadata:
