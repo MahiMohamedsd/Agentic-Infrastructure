@@ -2,10 +2,10 @@
 
 | Field | Value |
 |---|---|
-| Status | **Draft v0.1** — architectural baseline |
+| Status | **v0.2** — baseline v0.1 + accepted amendments |
 | Model | Open-source first |
 | Owner | Mohamed Seddik Mahi |
-| Amendments | [RFC-001-amendments.md](RFC-001-amendments.md) (A1–A13, awaiting decision) |
+| Amendments | [RFC-001-amendments.md](RFC-001-amendments.md) (A1–A13, decided 2026-11-02) |
 | Normative companions | [ARCHITECTURE](../ARCHITECTURE.md) · [EXECUTION_MODEL](../EXECUTION_MODEL.md) · [DATA_MODEL](../DATA_MODEL.md) · [SECURITY](../SECURITY.md) · [ROADMAP](../ROADMAP.md) · [ADR index](../adr/README.md) |
 
 > **Kiln — The Operating Infrastructure for Autonomous AI Systems**

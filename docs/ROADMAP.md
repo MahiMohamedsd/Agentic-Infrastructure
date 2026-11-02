@@ -49,7 +49,7 @@ journal partitioning, managed-mode Docker sandbox, gVisor/Firecracker spike.
 
 Datasets, scenario runner (executions tagged `evaluation`), deterministic/policy assertions, LLM
 judges (both orderings), Bradley–Terry with bootstrap CIs, critical-failure veto, gate engine
-(A12), version comparison.
+(A12) with **superiority** and **non-inferiority** modes, version comparison.
 **Exit:** a re-run of the same evaluation on the same versions gives the same gate decision. BT
 rankings reproduce within CI. A planted critical regression is blocked even when quality improves.
 
@@ -119,7 +119,7 @@ register agent → create version → submit execution → schedule worker → m
 
 ## 4. Owner decisions needed
 
-1. Accept or reject amendments **A1–A13** in [RFC-001-amendments.md](rfcs/RFC-001-amendments.md) (set each **Decision** field).
+1. ~~Accept or reject amendments A1–A13~~ **Decided 2026-11-02** — see [RFC-001-amendments.md](rfcs/RFC-001-amendments.md).
 2. **License** for the open-source core (Apache-2.0 is the usual choice for infrastructure because
    of its patent grant; it hasn't been set).
 3. First model provider for `ctx.model` in Phase 1.

@@ -20,7 +20,7 @@ challenged or prototyped.
 | ADR-012 | Docker-based local deployment | Accepted | |
 | ADR-013 | Open-source core | Accepted | License pending |
 | ADR-014 | Managed cloud as commercial offering | Proposed | |
-| ADR-015 | Native execution with explicit durable steps | Accepted | Step key `name#occurrence` (A5) |
-| ADR-016 | Lease held only in `RUNNING`; waits exit via `QUEUED` | Proposed | A1 |
-| ADR-017 | Temporal is a reference, not a backend, through V2 | Proposed | A9 |
-| ADR-018 | Budget reserve → settle | Proposed | A6 |
+| ADR-015 | Native execution with explicit durable steps | Accepted | Step key `name#occurrence`, matched by allocation ordinal (A5) |
+| ADR-016 | Lease held only in `RUNNING`; waits exit via `QUEUED` | Accepted | A1 |
+| ADR-017 | Temporal is a reference, not a backend, through V2 | Accepted | A9 |
+| ADR-018 | Budget reserve → settle | Accepted | A6 (input tokens: provider count or byte-length upper bound) |

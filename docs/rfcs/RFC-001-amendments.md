@@ -3,33 +3,34 @@
 | Field | Value |
 |---|---|
 | Amends | [RFC-001 — Kiln Architecture](RFC-001-kiln-architecture.md) |
-| Status | Each amendment is **Proposed** until the owner records a decision below |
+| Status | **Decided 2026-11-02**: 10 accepted, 3 accepted with changes (A5, A6, A12), 0 rejected |
+| Decided by | Review by Claude, delegated by the owner ("you judge what's best and decide"). The owner can reopen any item. |
 | Already reflected in | [EXECUTION_MODEL](../EXECUTION_MODEL.md) · [DATA_MODEL](../DATA_MODEL.md) · [SECURITY](../SECURITY.md) · [ADR index](../adr/README.md) · `kiln-core` · `0001_init.sql` |
 
 These came out of reviewing RFC-001 v0.1. Each one removes an internal contradiction or names a
 semantic the RFC left implicit.
 
-**How to decide:** set **Decision** to `Accepted`, `Rejected` or `Accepted with changes`, and add a
-note. A rejected amendment means reverting its changes in the documents and code listed under
-*Applied in*.
+Each decision below says why. "Accepted with changes" means the amendment itself had a flaw, which
+was fixed in the documents and code before acceptance. To reopen an item, change its decision back to
+`Proposed` and note the objection.
 
 ## Summary
 
 | # | Area | One-line change | Decision |
 |---|---|---|---|
-| [A1](#a1--lease-held-only-in-running) | Lifecycle | Lease only in `RUNNING`; waits exit via `QUEUED` | Proposed |
-| [A2](#a2--missing-transitions) | Lifecycle | Transitions for budget, `UNKNOWN` tool, approval outcomes, lease expiry | Proposed |
-| [A3](#a3--three-counters-instead-of-attempt) | Counters | `lease_generation`, `attempt`, re-run = new execution | Proposed |
-| [A4](#a4--cancellation-race) | Cancellation | Cancel fences the worker; late outcomes become annotation events | Proposed |
-| [A5](#a5--durable-step-identity-and-non-determinism) | Durable steps | `name#occurrence` keys; mismatch detection | Proposed |
-| [A6](#a6--budget-reserve--settle) | Budgets | Reserve before the call, settle after | Proposed |
-| [A7](#a7--tenant-column-on-every-table) | Tenancy | `organization_id` everywhere, composite FKs | Proposed |
-| [A8](#a8--task-queue-in-the-data-model) | Scheduler | `execution_tasks` + `workers` tables | Proposed |
-| [A9](#a9--temporal-is-a-reference-not-a-backend) | Temporal | Reference only; the queue is the swappable seam | Proposed |
-| [A10](#a10--approval-binding) | Approvals | Bound to args digest + policy, expiring, re-authorized | Proposed |
-| [A11](#a11--fewer-deployables-in-v0) | Layout | Two processes: `server` + `worker` | Proposed |
-| [A12](#a12--evaluation-gates-absolute-vs-relative) | Eval gates | Absolute vs relative gates; judge both orderings | Proposed |
-| [A13](#a13--policyevaluator-interface-before-cedar) | Policy | Interface first, built-in rules, Cedar later | Proposed |
+| [A1](#a1--lease-held-only-in-running) | Lifecycle | Lease only in `RUNNING`; waits exit via `QUEUED` | Accepted |
+| [A2](#a2--missing-transitions) | Lifecycle | Transitions for budget, `UNKNOWN` tool, approval outcomes, lease expiry | Accepted |
+| [A3](#a3--three-counters-instead-of-attempt) | Counters | `lease_generation`, `attempt`, re-run = new execution | Accepted |
+| [A4](#a4--cancellation-race) | Cancellation | Cancel fences the worker; late outcomes become annotation events | Accepted |
+| [A5](#a5--durable-step-identity-and-non-determinism) | Durable steps | `name#occurrence` keys; mismatch detection | Accepted with changes |
+| [A6](#a6--budget-reserve--settle) | Budgets | Reserve before the call, settle after | Accepted with changes |
+| [A7](#a7--tenant-column-on-every-table) | Tenancy | `organization_id` everywhere, composite FKs | Accepted |
+| [A8](#a8--task-queue-in-the-data-model) | Scheduler | `execution_tasks` + `workers` tables | Accepted |
+| [A9](#a9--temporal-is-a-reference-not-a-backend) | Temporal | Reference only; the queue is the swappable seam | Accepted |
+| [A10](#a10--approval-binding) | Approvals | Bound to args digest + policy, expiring, re-authorized | Accepted |
+| [A11](#a11--fewer-deployables-in-v0) | Layout | Two processes: `server` + `worker` | Accepted |
+| [A12](#a12--evaluation-gates-absolute-vs-relative) | Eval gates | Absolute vs relative gates; judge both orderings | Accepted with changes |
+| [A13](#a13--policyevaluator-interface-before-cedar) | Policy | Interface first, built-in rules, Cedar later | Accepted |
 
 ---
 
@@ -52,7 +53,7 @@ so there's nothing to fence.
 **Applied in.** EXECUTION_MODEL §2; `kiln_core.lifecycle`; test
 `test_only_running_holds_lease_and_waiting_states_exit_via_queued`; ADR-016.
 
-**Decision.** Proposed
+**Decision.** **Accepted** — Re-claiming after every wait adds one claim round-trip (milliseconds) and buys a single fencing rule. Worth it.
 
 ---
 
@@ -73,7 +74,7 @@ approval rejection or expiry, or a worker disappearing. The runtime would have t
 
 **Applied in.** EXECUTION_MODEL §2.1; `kiln_core.lifecycle.TRANSITIONS`.
 
-**Decision.** Proposed
+**Decision.** **Accepted** — Default for an expired approval is "deliver to the agent". A per-agent setting `on_approval_expired: fail` can be added later without a lifecycle change.
 
 ---
 
@@ -93,7 +94,7 @@ every claim; retry limits need one that changes only on retries.
 **Applied in.** EXECUTION_MODEL §1, §4.6; `executions` columns in `0001_init.sql`;
 `kiln_core.projection`; test `test_retry_increments_attempt_but_recovery_does_not`.
 
-**Decision.** Proposed
+**Decision.** **Accepted**
 
 ---
 
@@ -113,7 +114,7 @@ outcome goes.
 **Applied in.** EXECUTION_MODEL §8; `kiln_core.lifecycle.ANNOTATION_EVENT_TYPES`; test
 `test_cancel_fences_running_worker_but_late_outcomes_are_still_recorded`.
 
-**Decision.** Proposed
+**Decision.** **Accepted**
 
 ---
 
@@ -133,7 +134,7 @@ nothing notices.
 
 **Applied in.** EXECUTION_MODEL §5.2–5.3; `kiln_core.steps`; `tool_invocations.step_key`; ADR-015.
 
-**Decision.** Proposed
+**Decision.** **Accepted with changes** — The original rule matched calls by journal position, which breaks under concurrency: with `asyncio.gather(ctx.step("a"), ctx.step("b"))`, steps complete (and are journaled) in a nondeterministic order, so a correct replay would be flagged as non-determinism or results would be swapped. **Change:** every durable call gets an **allocation ordinal** synchronously at call time (program order, stable under `gather`), recorded in `step.started`. Matching is by ordinal, not by journal position. Two further rules: an ordinal missing from history (a crash between allocation and append) executes live, and recorded steps never reached by the end of the run are non-determinism. Implemented in `kiln_core.steps` with three new tests (concurrent completion order, crash gap, skipped steps).
 
 ---
 
@@ -151,7 +152,7 @@ example a $0.09 call when $0.02 is left).
 
 **Applied in.** EXECUTION_MODEL §7; `budget.reserved` / `budget.settled` events; `usage.reserved_usd`; ADR-018.
 
-**Decision.** Proposed
+**Decision.** **Accepted with changes** — The reservation formula needs `input_tokens` *before* the call, which v0.2 left unspecified. **Change:** use the provider's token-counting endpoint when available; otherwise use the request's UTF-8 byte length as a safe upper bound. Concurrent calls each hold their own reservation. EXECUTION_MODEL §7 updated.
 
 ---
 
@@ -170,7 +171,7 @@ that efficiently, and a bug could link a child row to another tenant's parent.
 **Applied in.** DATA_MODEL §1; `0001_init.sql`; SQL invariants (cross-tenant FK, RLS read/write);
 SECURITY §2.
 
-**Decision.** Proposed
+**Decision.** **Accepted** — Costs some index space on composite keys. That is the right price for making cross-tenant references impossible.
 
 ---
 
@@ -187,7 +188,7 @@ durable timers (retry backoff, approval timeouts).
 
 **Applied in.** EXECUTION_MODEL §4; DATA_MODEL §3; `0001_init.sql`.
 
-**Decision.** Proposed
+**Decision.** **Accepted**
 
 ---
 
@@ -203,7 +204,7 @@ the option open would leak into every interface.
 
 **Applied in.** ARCHITECTURE §8; ADR-017.
 
-**Decision.** Proposed
+**Decision.** **Accepted** — Revisit only if building our own durable timers or worker coordination becomes the bottleneck. The ADR-005 benchmark will tell us.
 
 ---
 
@@ -219,7 +220,7 @@ approved, then a $5,000 refund executed), or used after the policy changed.
 
 **Applied in.** `approval_requests` in `0001_init.sql`; SECURITY §5; ROADMAP test `sec-09`.
 
-**Decision.** Proposed
+**Decision.** **Accepted**
 
 ---
 
@@ -237,7 +238,7 @@ there are any users.
 
 **Applied in.** ARCHITECTURE §3–4; `infrastructure/docker/docker-compose.yml`; ADR-001.
 
-**Decision.** Proposed
+**Decision.** **Accepted**
 
 ---
 
@@ -256,7 +257,7 @@ there are any users.
 
 **Applied in.** ROADMAP Phase 4 exit criteria; `evaluation_runs.gate_decision`.
 
-**Decision.** Proposed
+**Decision.** **Accepted with changes** — A gate that only tests "candidate beats baseline" blocks a legitimate class of releases: moving to a cheaper or faster model with *equal* quality. **Change:** the relative gate has two modes. **Superiority**: lower bound of P(win) > 0.5. **Non-inferiority**: lower bound of P(win) > 0.5 − margin (default margin 0.05), only valid together with an improved cost or latency gate. If the confidence interval is too wide to decide, the result is `inconclusive`, which blocks promotion and asks for more samples, but is not recorded as a failure. ROADMAP Phase 4 updated.
 
 ---
 
@@ -272,4 +273,4 @@ maintenance risk if the policy engine depends on them directly from day one.
 
 **Applied in.** SECURITY §5; `policies.language` in `0001_init.sql`; ADR-010.
 
-**Decision.** Proposed
+**Decision.** **Accepted**

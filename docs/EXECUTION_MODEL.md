@@ -185,23 +185,34 @@ then resumes or cancels.
 ### 5.2 Recovery by reconstruction
 
 When a worker resumes execution *E*, it loads the journal and runs the agent function from the top.
-Each durable primitive call is matched to the recorded history by **step key = `name#occurrence`**
-(the n-th call with that name in this execution):
+Each durable primitive call gets two identifiers **synchronously, at call time** (before the
+returned awaitable is scheduled):
+
+- **ordinal**: the n-th durable call in this execution (0, 1, 2, …), and
+- **step key** = `name#occurrence`: the n-th call with that name.
+
+Both are written into `step.started` / `tool.invocation.pending`. Matching uses the **ordinal**.
+Concurrent steps (`asyncio.gather`) *complete* in a nondeterministic order, but they are *allocated*
+in program order, so allocation ordinals are stable across replays and completion order is
+irrelevant. For each call:
 
 - A recorded completed result exists → return it without executing.
 - A recorded `started` exists but no completion → the operation was interrupted. Steps and model
   calls run again (charged again; budget-visible). Tool invocations follow the broker's
   reconciliation rules and are never blindly repeated.
-- No record → execute normally (live mode).
+- No record for that ordinal → execute normally (live mode). This includes a gap left by a crash
+  between allocation and the `step.started` append. Intent-before-submit guarantees an unrecorded
+  tool call never left Kiln.
 
 Checkpoints are an optimization. With a checkpoint at sequence *s*, the runtime restores the
 checkpointed state and only replays primitives after *s*.
 
 ### 5.3 Non-determinism detection
 
-If the agent's n-th primitive call doesn't match the recorded n-th call (different name/kind, or
-different args digest for tools), the runtime raises `NonDeterminismError`, appends
-`nondeterminism.detected` and suspends. Recovery **always** uses the execution's pinned
+If the call allocated with ordinal *n* doesn't match the step recorded with ordinal *n* (different
+key or kind, or a different args digest for tools), the runtime raises `NonDeterminismError`,
+appends `nondeterminism.detected` and suspends. When the agent returns, any recorded step it never
+reached is also non-determinism (the code took a different path). Recovery **always** uses the execution's pinned
 `agent_version_id`. A deploy never changes the code of an in-flight execution.
 
 ### 5.4 What we explicitly do not promise
@@ -236,9 +247,14 @@ Budget dimensions: `max_steps`, `max_duration_seconds` (wall clock from first cl
 waiting states), `max_cost_usd`, `max_tool_calls`.
 
 1. Before a model call: `reservation = max_output_tokens × output_price + input_tokens × input_price`.
+   `input_tokens` comes from the provider's token-counting endpoint when one is available. Otherwise
+   the UTF-8 byte length of the request is used as a safe upper bound (byte-level tokenizers emit at
+   least one byte per token).
 2. If `spent + outstanding_reservations + reservation > max_cost_usd`, raise `budget.exhausted` and
    do not call.
 3. After the call, settle the actual usage and release the remainder of the reservation.
+4. Concurrent calls in one execution each hold their own reservation, so `outstanding_reservations`
+   covers parallelism.
 
 Prices come from a versioned price table referenced by the agent version. Unknown price → the call
 is refused when a cost budget is set (fail closed).

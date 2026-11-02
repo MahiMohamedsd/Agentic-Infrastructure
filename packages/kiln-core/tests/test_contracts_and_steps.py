@@ -77,9 +77,9 @@ class TestIntegrationLevels:
 class TestStepCursor:
     def history(self):
         return [
-            RecordedStep("lookup#0", StepKind.STEP, None, True, {"id": 1}),
-            RecordedStep("llm#0", StepKind.MODEL, None, True, "hi"),
-            RecordedStep("refund#0", StepKind.TOOL, digest({"amount": 10}), False),
+            RecordedStep(0, "lookup#0", StepKind.STEP, None, True, {"id": 1}),
+            RecordedStep(1, "llm#0", StepKind.MODEL, None, True, "hi"),
+            RecordedStep(2, "refund#0", StepKind.TOOL, digest({"amount": 10}), False),
         ]
 
     def test_replay_returns_recorded_then_reexecutes_interrupted_then_goes_live(self):
@@ -88,8 +88,10 @@ class TestStepCursor:
         assert c.next("llm", StepKind.MODEL).decision is Decision.RETURN_RECORDED
         m = c.next("refund", StepKind.TOOL, digest({"amount": 10}))
         assert m.decision is Decision.RE_EXECUTE and m.key == "refund#0"
-        assert c.next("llm", StepKind.MODEL).key == "llm#1"
         assert not c.replaying
+        live = c.next("llm", StepKind.MODEL)
+        assert live.key == "llm#1" and live.decision is Decision.EXECUTE
+        c.assert_fully_consumed()
 
     def test_loops_get_distinct_keys(self):
         c = StepCursor([])
@@ -98,6 +100,23 @@ class TestStepCursor:
             "poll#1",
             "poll#2",
         ]
+
+    def test_concurrent_steps_match_by_allocation_not_completion_order(self):
+        # gather(step a, step b): b completed (and was journaled) before a. History is stored
+        # in journal order; matching must still pair a with ordinal 0 and b with ordinal 1.
+        history = [
+            RecordedStep(1, "b#0", StepKind.STEP, None, True, "B"),
+            RecordedStep(0, "a#0", StepKind.STEP, None, True, "A"),
+        ]
+        c = StepCursor(history)
+        assert c.next("a", StepKind.STEP).recorded.result == "A"
+        assert c.next("b", StepKind.STEP).recorded.result == "B"
+
+    def test_gap_from_crash_between_allocation_and_journal_executes_live(self):
+        # Ordinal 0 was allocated but its step.started never committed; ordinal 1 completed.
+        c = StepCursor([RecordedStep(1, "b#0", StepKind.STEP, None, True, "B")])
+        assert c.next("a", StepKind.STEP).decision is Decision.EXECUTE
+        assert c.next("b", StepKind.STEP).decision is Decision.RETURN_RECORDED
 
     def test_code_change_detected(self):
         c = StepCursor(self.history())
@@ -110,6 +129,12 @@ class TestStepCursor:
         c.next("llm", StepKind.MODEL)
         with pytest.raises(NonDeterminismError):
             c.next("refund", StepKind.TOOL, digest({"amount": 9999}))
+
+    def test_skipped_recorded_steps_detected_at_end(self):
+        c = StepCursor(self.history())
+        c.next("lookup", StepKind.STEP)
+        with pytest.raises(NonDeterminismError):
+            c.assert_fully_consumed()
 
 
 class TestEventsAndIds:
