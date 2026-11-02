@@ -5,6 +5,7 @@
 | Status | **Draft v0.1** — architectural baseline |
 | Model | Open-source first |
 | Owner | Mohamed Seddik Mahi |
+| Amendments | [RFC-001-amendments.md](RFC-001-amendments.md) (A1–A13, awaiting decision) |
 | Normative companions | [ARCHITECTURE](../ARCHITECTURE.md) · [EXECUTION_MODEL](../EXECUTION_MODEL.md) · [DATA_MODEL](../DATA_MODEL.md) · [SECURITY](../SECURITY.md) · [ROADMAP](../ROADMAP.md) · [ADR index](../adr/README.md) |
 
 > **Kiln — The Operating Infrastructure for Autonomous AI Systems**
@@ -17,7 +18,7 @@ architectural boundaries, internal contracts, entities, API interfaces, executio
 failure handling, security boundaries, deployment, milestones and acceptance criteria.
 
 Where this RFC and a companion document disagree, **the companion document wins**. Those
-documents incorporate the review amendments in [Appendix A](#appendix-a--review-amendments-v01--v02).
+documents incorporate the review amendments in [RFC-001-amendments.md](RFC-001-amendments.md).
 
 ---
 
@@ -391,24 +392,7 @@ persist events → complete → inspect full history. **Then kill the worker and
 
 ---
 
-## Appendix A — Review amendments (v0.1 → v0.2)
+## Appendix A — Review amendments
 
-These came out of reviewing v0.1. Each one either removes an internal contradiction or names a
-semantic the RFC left implicit. They are already reflected in the companion documents. Status:
-**Proposed** until the owner accepts them.
-
-| # | Area | Problem in v0.1 | Amendment |
-|---|---|---|---|
-| A1 | Lifecycle | `tool.completed → RUNNING` but `approval.granted → QUEUED`: inconsistent. Who holds the lease while waiting? | **A lease exists only in `RUNNING`.** Every waiting state releases the lease, and every exit from a waiting state goes to `QUEUED`. Short tool calls run *inside* the lease as events with no status change; `WAITING_FOR_TOOL` is only for deferred/async tools. |
-| A2 | Lifecycle | No transition for budget exhaustion, `UNKNOWN` tool outcomes, approval rejection/expiry, or worker loss. | `budget.exhausted → SUSPENDED` (resumable after a budget raise); `tool.unresolved → SUSPENDED`; approval `granted/rejected/expired → QUEUED`, with the decision delivered to the agent as the step result; `lease.expired → QUEUED`. |
-| A3 | Attempts | `attempt` is overloaded (crash recovery vs retry vs re-run). | Three counters: `lease_generation` (every claim, used for fencing), `attempt` (each `RETRY_WAIT → QUEUED`), and **re-execution = a new execution** with `rerun_of`. Recovery never increments `attempt`. |
-| A4 | Cancellation | Race: the control plane cancels while a worker runs, and a side-effect may land after cancellation. | Cancelling `RUNNING` bumps `lease_generation`, which fences out the worker. Terminal executions accept **annotation events** (late tool outcomes, evaluations) but never transition events. |
-| A5 | Durable steps | Step identity by name alone collides inside loops. Code changes between crash and recovery corrupt replay. | Step key = `name#occurrence`. On recovery, a name mismatch at a recorded position raises a **non-determinism error** and suspends the execution. Recovery always uses the execution's pinned `agent_version_id`. |
-| A6 | Budgets | Post-hoc cost accounting lets a single call overshoot `max_cost_usd`. | **Reserve → settle**: reserve the worst-case cost (max tokens × price) before the call, settle actual usage after. A call is refused if its reservation would exceed the budget. A model call interrupted by a crash is charged again on retry, and that is visible in the journal. |
-| A7 | Tenancy / RLS | RLS needs the tenant column on the row itself; "indirect" ownership through joins cannot be enforced efficiently. | Denormalize `organization_id` onto **every** tenant-owned table. Composite FKs `(organization_id, id)` make cross-tenant references impossible at the schema level. |
-| A8 | Scheduler | The task queue is not in the data model. | Add `execution_tasks` (`available_at` doubles as the durable timer for retries and approval timeouts) and `workers` (heartbeats). |
-| A9 | Temporal | "Temporal as a future backend" conflicts with owning leases, fencing and the journal; the two models don't compose cleanly. | **Non-goal for V1/V2.** Temporal stays a design reference. The pluggable seam is the *queue transport* (PG → SQS/NATS), not the durability model. |
-| A10 | Approvals | An approval could be reused for different arguments. | An approval binds to `(tool_invocation_id, args_digest, policy_version)` and has an `expires_at`. Re-authorization happens at execution time. |
-| A11 | Layout | `apps/runtime` + `apps/scheduler` + `apps/api` + 8 packages is too much surface for V0. | V0 ships two processes: **`server`** (API + scheduler + runtime coordination) and **`worker`**. Packages start as one distribution per RFC domain only once its interface stabilizes; `kiln-core` comes first. Redis is dropped from Compose; MinIO is behind an optional profile. |
-| A12 | Eval gates | `minimum_score: 0.90` mixes absolute and relative metrics. Bradley–Terry yields *relative* strengths. | Gates separate **absolute** checks (deterministic pass rate, policy violations = 0, cost/latency deltas) from **relative** ones (candidate beats baseline with P(win) lower confidence bound > 0.5 via bootstrap over BT fits). Judges score both orderings to cancel position bias. |
-| A13 | Cedar | Cedar's Python bindings are community-maintained, which is a supply-chain and maintenance risk. | A `PolicyEvaluator` interface. V1 ships a small built-in evaluator for effect/tool/amount rules; Cedar plugs in behind the same interface after a prototype (ADR-010 stays Proposed). |
+Moved to its own document: **[RFC-001 Amendments (A1–A13)](RFC-001-amendments.md)**, with one section
+and one decision field per amendment.

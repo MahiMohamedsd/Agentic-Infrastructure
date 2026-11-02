@@ -119,7 +119,7 @@ register agent → create version → submit execution → schedule worker → m
 
 ## 4. Owner decisions needed
 
-1. Accept or reject amendments **A1–A13** (RFC-001 Appendix A).
+1. Accept or reject amendments **A1–A13** in [RFC-001-amendments.md](rfcs/RFC-001-amendments.md) (set each **Decision** field).
 2. **License** for the open-source core (Apache-2.0 is the usual choice for infrastructure because
    of its patent grant; it hasn't been set).
 3. First model provider for `ctx.model` in Phase 1.

@@ -14,7 +14,8 @@ approvals, and evaluation-gated promotion.
 
 | Document | What it defines |
 |---|---|
-| [RFC-001](docs/rfcs/RFC-001-kiln-architecture.md) | The architectural baseline and review amendments |
+| [RFC-001](docs/rfcs/RFC-001-kiln-architecture.md) | The architectural baseline |
+| [RFC-001 Amendments](docs/rfcs/RFC-001-amendments.md) | A1–A13: review changes awaiting your decision |
 | [ARCHITECTURE](docs/ARCHITECTURE.md) | Boundaries, processes, layout, public API |
 | [EXECUTION_MODEL](docs/EXECUTION_MODEL.md) | State machine, journal, leases and fencing, recovery, tool outcomes, budgets |
 | [DATA_MODEL](docs/DATA_MODEL.md) | Entities, tenancy, immutability, write paths |
